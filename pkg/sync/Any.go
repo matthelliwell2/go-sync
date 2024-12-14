@@ -1,7 +1,8 @@
 package sync
 
-// Any returns a future when completes when any of the input futures complete successfully. It will try and return the
-// first one to complete and not wait on all the others. If they all fail then
+// Any returns a future which completes when any of the input futures complete successfully.
+//
+// It will complete as soon as one of the futures completes, it will not wait on all the others. If they all fail then
 // the error is an array of errors for each function. In this case the result is undefined and shouldn't be used.
 func Any[T any, E error](futures ...*Future[T, E]) *Future[T, Errors[E]] {
 	return NewFuture(func() (T, *Errors[E]) {

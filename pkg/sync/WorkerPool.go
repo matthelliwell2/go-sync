@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// WorkerPool is a pool for Go Routines that can be used for executing Futures.
 type WorkerPool struct {
 	// The waitgroup used for overall synchronisation of the workerpool, eg waiting until all go routines in the
 	// pool have finished.
@@ -33,11 +34,14 @@ func NewWorkerPool(poolSize int, bufferSize int) WorkerPool {
 	return wp
 }
 
-// NewFutureInPool returns a future that instead of starting the go routine immediately, it queues it to a worker pool
+// NewFutureInPool returns a future that instead of starting the go routine immediately, queues it to a worker pool
 // for execution when a worker is free.
+//
 // wp the workerpool to execute the function
 // fn the function to execute in a go routine
-// Returns a pointer to a Future which can be used to retrieve the functions results when it has executed.
+//
+// Returns a pointer to a Future which can be used to retrieve the functions results when it has executed. If the
+// workpool is busy and the buffer is full, this method blocks until a slot becomes free.
 func NewFutureInPool[R any, E error](wp WorkerPool, fn func() (R, *E)) *Future[R, E] {
 	// Create a future with its own wait group so we can wait on the individual future if we want to. Don't use the
 	// NewFuture function as that creates its own go routine and we want to use the worker pool.
@@ -60,7 +64,8 @@ func NewFutureInPool[R any, E error](wp WorkerPool, fn func() (R, *E)) *Future[R
 	return &f
 }
 
-// Wait waits for all functions either executing or queued to complete
+// Wait waits for all functions either executing or queued to complete. This is equivalent to calling [AllSettled] on
+// each of the futures in the pool, but is a bit more convenient.
 func (wp WorkerPool) Wait() {
 	wp.wg.Wait()
 }
